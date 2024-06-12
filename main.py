@@ -7,14 +7,15 @@ from PIL import Image
 import tkinter as tk
 from tkinter import filedialog
 import os
+from intro_screen import intro_screen
 
 class Planet:
     AU = 149.6e6 * 1000  # Astronomical unit in meters
     G = 6.67428e-11  # Gravitational constant
-    SCALE = 2000 / AU  # Scale for rendering
+    SCALE = 4000 / AU  # Scale for rendering
     TIMESTEP = 3000   # Time step 
 
-    def __init__(self, x, y, z, radius, texture_file, mass, x_vel=0, y_vel=0, z_vel=0):
+    def __init__(self, x, y, z, radius, texture_file, mass, rotational_speed, x_vel=0, y_vel=0, z_vel=0):
         self.x = x
         self.y = y
         self.z = z
@@ -29,6 +30,9 @@ class Planet:
         self.x_vel = x_vel
         self.y_vel = y_vel
         self.z_vel = z_vel
+
+        self.rotational_speed = rotational_speed
+        self.rotation_angle = 0
 
         self.texture_id = self.load_texture(texture_file)
 
@@ -53,6 +57,7 @@ class Planet:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
         glTranslatef(self.x * self.SCALE, self.y * self.SCALE, self.z * self.SCALE)
+        glRotatef(self.rotation_angle, 0, 1, 0)  # Rotate around Y-axis (change axis as needed)
 
         quadric = gluNewQuadric()
         gluQuadricTexture(quadric, GL_TRUE)
@@ -108,6 +113,9 @@ class Planet:
         self.z += self.z_vel * self.TIMESTEP
         self.orbit.append((self.x, self.y, self.z))
 
+        # Update rotation angle
+        self.rotation_angle += self.rotational_speed * Planet.TIMESTEP
+
 def calculate_initial_velocities(distance):
     G = 6.67430e-11
     M = 1.989e30
@@ -116,11 +124,11 @@ def calculate_initial_velocities(distance):
     vz = v
     return vx, vz
 
-def create_planet(x, y, z, radius, texture_file, mass, planets=None, x_vel=0, y_vel=0, z_vel=0):
+def create_planet(x, y, z, radius, texture_file, mass, rotational_speed, planets=None, x_vel=0, y_vel=0, z_vel=0):
     if planets is None:
         planets = []
 
-    new_planet = Planet(x, y, z, radius, texture_file, mass, x_vel, y_vel, z_vel)
+    new_planet = Planet(x, y, z, radius, texture_file, mass, rotational_speed, x_vel, y_vel, z_vel)
     planets.append(new_planet)
     return new_planet
 
@@ -132,9 +140,10 @@ def open_tkinter_window(planets):
         radius = float(radius_entry.get())
         mass = float(mass_entry.get())
         texture_file = texture_entry.get()
+        rotational_speed = float(rotational_speed_entry.get())  # Add this line to get rotational speed
         planet_distance = math.sqrt(x ** 2 + y ** 2 + z ** 2)
         planet_vx, planet_vz = calculate_initial_velocities(planet_distance)
-        create_planet(x, y, z, radius, texture_file, mass, planets, planet_vx, 0, planet_vz)
+        create_planet(x, y, z, radius, texture_file, mass, rotational_speed, planets, planet_vx, 0, planet_vz)
         root.destroy()
 
     root = tk.Tk()
@@ -160,9 +169,13 @@ def open_tkinter_window(planets):
     mass_entry = tk.Entry(root)
     mass_entry.grid(row=4, column=1)
 
-    tk.Label(root, text="Texture File:").grid(row=5, column=0)
+    tk.Label(root, text="Rotational Speed:").grid(row=5, column=0)  # Add label for rotational speed
+    rotational_speed_entry = tk.Entry(root)  # Add entry field for rotational speed
+    rotational_speed_entry.grid(row=5, column=1)
+
+    tk.Label(root, text="Texture File:").grid(row=6, column=0)
     texture_entry = tk.Entry(root)
-    texture_entry.grid(row=5, column=1)
+    texture_entry.grid(row=6, column=1)
 
     def browse_texture_file():
         filename = filedialog.askopenfilename(initialdir=os.getcwd(), title="Select Texture File", filetypes=[("JPEG files", "*.jpg"), ("PNG files", "*.png")])
@@ -171,14 +184,15 @@ def open_tkinter_window(planets):
             texture_entry.insert(0, filename)
 
     browse_button = tk.Button(root, text="Browse", command=browse_texture_file)
-    browse_button.grid(row=5, column=2)
+    browse_button.grid(row=6, column=2)
 
     create_button = tk.Button(root, text="Create", command=create_new_planet)
-    create_button.grid(row=6, columnspan=2)
+    create_button.grid(row=7, columnspan=2)  # Adjust the row to avoid overlapping with the new entry field
 
     root.mainloop()
 
 def main():
+    intro_screen()
     if not glfw.init():
         return
 
@@ -197,36 +211,85 @@ def main():
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    glTranslatef(0.0, 0.0, -1000.0)
-    glRotatef(30, 1, 0, 0)
+    # Initial camera position and orientation
+    camera_pos = [0, 0, -1000]  # Initial position of camera
+    camera_rot = [30, 0, 0]  # Initial rotation angles of camera
+    current_planet_index = 0  # Index of the currently focused planet
 
-    sun = Planet(0, 0, 0, 100, "images/sun.jpg", 1.98892 * 10 ** 30)
+    # Movement speed of the camera
+    move_speed = 1000
+
+    # Function to handle keyboard input for camera movement
+    def key_callback(window, key, scancode, action, mods):
+        nonlocal camera_pos
+        nonlocal current_planet_index
+        if action == glfw.PRESS or action == glfw.REPEAT:
+            if key == glfw.KEY_W:
+                camera_pos[2] += move_speed
+            elif key == glfw.KEY_S:
+                camera_pos[2] -= move_speed
+            elif key == glfw.KEY_A:
+                camera_pos[0] -= move_speed
+            elif key == glfw.KEY_D:
+                camera_pos[0] += move_speed
+            elif key == glfw.KEY_RIGHT:
+                switch_to_next_planet()
+
+    # Function to switch camera focus to the next planet
+    def switch_to_next_planet():
+        nonlocal current_planet_index
+        current_planet_index = (current_planet_index + 1) % len(planets)
+        planet = planets[current_planet_index]
+        camera_pos[0] = planet.x * Planet.SCALE
+        camera_pos[1] = planet.y * Planet.SCALE
+        camera_pos[2] = planet.z * Planet.SCALE
+
+    # Function to handle mouse input for camera rotation
+    def cursor_pos_callback(window, xpos, ypos):
+        nonlocal camera_rot
+        sensitivity = 0.1
+        camera_rot[0] += ypos * sensitivity
+        camera_rot[1] -= xpos * sensitivity
+        glfw.set_cursor_pos(window, 0, 0)
+
+    glfw.set_key_callback(window, key_callback)
+    glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_DISABLED)
+    glfw.set_cursor_pos_callback(window, cursor_pos_callback)
+
+    sun = Planet(0, 0, 0, 100, "images/sun.jpg", 1.98892 * 10 ** 30, 0)
     sun.sun = True
 
     planets = [sun]
 
     planet_data = [
-        ("Mercury", 0.39, 12.4, "images/mercury.jpeg", 3.30e23),
-        ("Venus", 0.72, 26.0, "images/venus.jpg", 4.87e24),
-        ("Earth", 1.0, 26.4, "images/earth.jpg", 5.97e24),
-        ("Mars", 1.52, 28.4, "images/mars.jpeg", 6.42e23),
-        ("Jupiter", 5.2, 70.0, "images/jupiter.jpeg", 1.90e27),
-        ("Saturn", 9.58, 62.0, "images/saturn.jpeg", 5.68e26),
-        ("Uranus", 19.22, 25.0, "images/uranus.jpeg", 8.68e25),
-        ("Neptune", 30.05, 24.0, "images/neptune.jpeg", 1.02e26),
+        ("Mercury", 0.39, 12.4, "images/mercury.jpeg", 3.30e23, 0.1),
+        ("Venus", 0.72, 26.0, "images/venus.jpg", 4.87e24, 0.05),
+        ("Earth", 1.0, 26.4, "images/earth.jpg", 5.97e24, 0.02),
+        ("Mars", 1.52, 28.4, "images/mars.jpeg", 6.42e23, 0.03),
+        ("Jupiter", 5.2, 70.0, "images/jupiter.jpeg", 1.90e27, 0.01),
+        ("Saturn", 9.58, 62.0, "images/saturn.jpeg", 5.68e26, 0.005),
+        ("Uranus", 19.22, 25.0, "images/uranus.jpeg", 8.68e25, 0.008),
+        ("Neptune", 30.05, 24.0, "images/neptune.jpeg", 1.02e26, 0.007),
     ]
 
-    for name, distance_au, radius, texture, mass in planet_data:
+    for name, distance_au, radius, texture, mass, rotational_speed in planet_data:
         distance_m = distance_au * Planet.AU
         x, y, z = distance_m, 0, 0
         vx, vz = calculate_initial_velocities(distance_m)
-        create_planet(x, y, z, radius, texture, mass, planets, vx, 0, vz)
+        create_planet(x, y, z, radius, texture, mass, rotational_speed, planets, vx, 0, vz)
 
     while not glfw.window_should_close(window):
         for planet in planets:
             planet.update_position(planets)
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glLoadIdentity()
+        gluLookAt(camera_pos[0], camera_pos[1], camera_pos[2], 0, 0, 0, 0, 1, 0)  # Set the camera position and orientation
+
+        # Apply rotation to the camera
+        glRotatef(camera_rot[0], 1, 0, 0)
+        glRotatef(camera_rot[1], 0, 1, 0)
+
         for planet in planets:
             planet.draw()
 
