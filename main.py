@@ -216,7 +216,7 @@ def open_tkinter_window(planets):
         texture_file = texture_entry.get()
         rotational_speed = float(
             rotational_speed_entry.get()
-        )  # Add this line to get rotational speed
+        )  
         planet_distance = math.sqrt(x**2 + y**2 + z**2)
         planet_vx, planet_vz = calculate_initial_velocities(planet_distance)
         create_planet(
@@ -283,7 +283,7 @@ def open_tkinter_window(planets):
     create_button = tk.Button(root, text="Create", command=create_new_planet)
     create_button.grid(
         row=7, columnspan=2
-    )  # Adjust the row to avoid overlapping with the new entry field
+    )  
 
     root.mainloop()
 
@@ -311,7 +311,7 @@ def main():
     # Initial camera position and orientation
     camera_pos = [0, 0, -1000]  # Initial position of camera
     camera_rot = [30, 0, 0]  # Initial rotation angles of camera
-    current_planet_index = 0  # Index of the currently focused planet
+    
 
     # Movement speed of the camera
     move_speed = 1000
@@ -319,7 +319,7 @@ def main():
     # Function to handle keyboard input for camera movement
     def key_callback(window, key, scancode, action, mods):
         nonlocal camera_pos
-        nonlocal current_planet_index
+        
         if action == glfw.PRESS or action == glfw.REPEAT:
             if key == glfw.KEY_W:
                 camera_pos[2] += move_speed
@@ -329,8 +329,6 @@ def main():
                 camera_pos[0] -= move_speed
             elif key == glfw.KEY_D:
                 camera_pos[0] += move_speed
-            elif key == glfw.KEY_RIGHT:
-                switch_to_next_planet()
             elif key == glfw.KEY_SPACE:
                 increase_timestep()
             elif key == glfw.KEY_BACKSPACE:
@@ -344,14 +342,6 @@ def main():
     def decrease_timestep():
         Planet.TIMESTEP /= 2
 
-    # Function to switch camera focus to the next planet
-    def switch_to_next_planet():
-        nonlocal current_planet_index
-        current_planet_index = (current_planet_index + 1) % len(planets)
-        planet = planets[current_planet_index]
-        camera_pos[0] = planet.x * Planet.SCALE
-        camera_pos[1] = planet.y * Planet.SCALE
-        camera_pos[2] = planet.z * Planet.SCALE
 
     # Function to handle mouse input for camera rotation
     def cursor_pos_callback(window, xpos, ypos):
