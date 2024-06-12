@@ -5,7 +5,7 @@ import math
 import numpy as np
 from PIL import Image
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import messagebox, filedialog
 import os
 from intro_screen import intro_screen
 
@@ -23,7 +23,8 @@ class Planet:
         self.texture_file = texture_file
         self.mass = mass
 
-        self.orbit = []
+        self.trail = []
+        self.trail_length = 100  # Number of points in the trail
         self.sun = False
         self.distance_to_sun = 0
 
@@ -51,6 +52,7 @@ class Planet:
         return texture_id
 
     def draw(self):
+        # Draw the planet
         glPushMatrix()
         glBindTexture(GL_TEXTURE_2D, self.texture_id)
         glEnable(GL_BLEND)
@@ -65,6 +67,14 @@ class Planet:
         gluDeleteQuadric(quadric)
 
         glDisable(GL_BLEND)
+        glPopMatrix()
+
+        # Draw the trail
+        glPushMatrix()
+        glBegin(GL_LINE_STRIP)
+        for pos in self.trail:
+            glVertex3f(pos[0] * self.SCALE, pos[1] * self.SCALE, pos[2] * self.SCALE)
+        glEnd()
         glPopMatrix()
 
     def attraction(self, other):
@@ -99,6 +109,11 @@ class Planet:
             total_fy += fy
             total_fz += fz
 
+            # Check for collision
+            distance = math.sqrt((self.x - other_planet.x) ** 2 + (self.y - other_planet.y) ** 2 + (self.z - other_planet.z) ** 2)
+            if distance < (self.radius + other_planet.radius):
+                self.show_collision_message(distance / self.AU)
+
         sun_force_x, sun_force_y, sun_force_z = self.attraction(planets[0])
         total_fx += sun_force_x
         total_fy += sun_force_y
@@ -111,10 +126,20 @@ class Planet:
         self.x += self.x_vel * self.TIMESTEP
         self.y += self.y_vel * self.TIMESTEP
         self.z += self.z_vel * self.TIMESTEP
-        self.orbit.append((self.x, self.y, self.z))
+
+        self.trail.append((self.x, self.y, self.z))
+        if len(self.trail) > self.trail_length:
+            self.trail.pop(0)
 
         # Update rotation angle
         self.rotation_angle += self.rotational_speed * Planet.TIMESTEP
+
+    @staticmethod
+    def show_collision_message(distance_au):
+        root = tk.Tk()
+        root.withdraw()
+        messagebox.showinfo("Collision Detected", f"A collision has been detected at {distance_au:.2f} AU.")
+        root.destroy()
 
 def calculate_initial_velocities(distance):
     G = 6.67430e-11
@@ -234,6 +259,18 @@ def main():
                 camera_pos[0] += move_speed
             elif key == glfw.KEY_RIGHT:
                 switch_to_next_planet()
+            elif key == glfw.KEY_SPACE:
+                increase_timestep()
+            elif key == glfw.KEY_BACKSPACE:
+                decrease_timestep()
+
+    # Function to increase the timestep
+    def increase_timestep():
+        Planet.TIMESTEP *= 2
+
+    # Function to decrease the timestep
+    def decrease_timestep():
+        Planet.TIMESTEP /= 2
 
     # Function to switch camera focus to the next planet
     def switch_to_next_planet():
@@ -296,7 +333,7 @@ def main():
         glfw.swap_buffers(window)
         glfw.poll_events()
 
-        # Check for 'C' key press to create a new planet
+        # Check for 'C' key press to create a new planetc
         if glfw.get_key(window, glfw.KEY_C) == glfw.PRESS:
             open_tkinter_window(planets)
 
