@@ -9,13 +9,26 @@ from tkinter import messagebox, filedialog
 import os
 from intro_screen import intro_screen
 
+
 class Planet:
     AU = 149.6e6 * 1000  # Astronomical unit in meters
     G = 6.67428e-11  # Gravitational constant
     SCALE = 4000 / AU  # Scale for rendering
-    TIMESTEP = 3000   # Time step 
+    TIMESTEP = 3000  # Time step
 
-    def __init__(self, x, y, z, radius, texture_file, mass, rotational_speed, x_vel=0, y_vel=0, z_vel=0):
+    def __init__(
+        self,
+        x,
+        y,
+        z,
+        radius,
+        texture_file,
+        mass,
+        rotational_speed,
+        x_vel=0,
+        y_vel=0,
+        z_vel=0,
+    ):
         self.x = x
         self.y = y
         self.z = z
@@ -47,7 +60,17 @@ class Planet:
         glBindTexture(GL_TEXTURE_2D, texture_id)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img_data)
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA,
+            width,
+            height,
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            img_data,
+        )
 
         return texture_id
 
@@ -59,7 +82,9 @@ class Planet:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
         glTranslatef(self.x * self.SCALE, self.y * self.SCALE, self.z * self.SCALE)
-        glRotatef(self.rotation_angle, 0, 1, 0)  # Rotate around Y-axis (change axis as needed)
+        glRotatef(
+            self.rotation_angle, 0, 1, 0
+        )  # Rotate around Y-axis (change axis as needed)
 
         quadric = gluNewQuadric()
         gluQuadricTexture(quadric, GL_TRUE)
@@ -82,7 +107,7 @@ class Planet:
         distance_x = other_x - self.x
         distance_y = other_y - self.y
         distance_z = other_z - self.z
-        distance = math.sqrt(distance_x ** 2 + distance_y ** 2 + distance_z ** 2)
+        distance = math.sqrt(distance_x**2 + distance_y**2 + distance_z**2)
 
         if distance == 0:
             return 0, 0, 0
@@ -90,7 +115,7 @@ class Planet:
         if other.sun:
             self.distance_to_sun = distance
 
-        force = self.G * self.mass * other.mass / distance ** 2
+        force = self.G * self.mass * other.mass / distance**2
         theta = math.atan2(distance_y, distance_x)
         phi = math.acos(distance_z / distance)
         force_x = math.sin(phi) * math.cos(theta) * force
@@ -110,7 +135,11 @@ class Planet:
             total_fz += fz
 
             # Check for collision
-            distance = math.sqrt((self.x - other_planet.x) ** 2 + (self.y - other_planet.y) ** 2 + (self.z - other_planet.z) ** 2)
+            distance = math.sqrt(
+                (self.x - other_planet.x) ** 2
+                + (self.y - other_planet.y) ** 2
+                + (self.z - other_planet.z) ** 2
+            )
             if distance < (self.radius + other_planet.radius):
                 self.show_collision_message(distance / self.AU)
 
@@ -138,8 +167,12 @@ class Planet:
     def show_collision_message(distance_au):
         root = tk.Tk()
         root.withdraw()
-        messagebox.showinfo("Collision Detected", f"A collision has been detected at {distance_au:.2f} AU.")
+        messagebox.showinfo(
+            "Collision Detected",
+            f"A collision has been detected at {distance_au:.2f} AU.",
+        )
         root.destroy()
+
 
 def calculate_initial_velocities(distance):
     G = 6.67430e-11
@@ -149,13 +182,29 @@ def calculate_initial_velocities(distance):
     vz = v
     return vx, vz
 
-def create_planet(x, y, z, radius, texture_file, mass, rotational_speed, planets=None, x_vel=0, y_vel=0, z_vel=0):
+
+def create_planet(
+    x,
+    y,
+    z,
+    radius,
+    texture_file,
+    mass,
+    rotational_speed,
+    planets=None,
+    x_vel=0,
+    y_vel=0,
+    z_vel=0,
+):
     if planets is None:
         planets = []
 
-    new_planet = Planet(x, y, z, radius, texture_file, mass, rotational_speed, x_vel, y_vel, z_vel)
+    new_planet = Planet(
+        x, y, z, radius, texture_file, mass, rotational_speed, x_vel, y_vel, z_vel
+    )
     planets.append(new_planet)
     return new_planet
+
 
 def open_tkinter_window(planets):
     def create_new_planet():
@@ -165,10 +214,24 @@ def open_tkinter_window(planets):
         radius = float(radius_entry.get())
         mass = float(mass_entry.get())
         texture_file = texture_entry.get()
-        rotational_speed = float(rotational_speed_entry.get())  # Add this line to get rotational speed
-        planet_distance = math.sqrt(x ** 2 + y ** 2 + z ** 2)
+        rotational_speed = float(
+            rotational_speed_entry.get()
+        )  # Add this line to get rotational speed
+        planet_distance = math.sqrt(x**2 + y**2 + z**2)
         planet_vx, planet_vz = calculate_initial_velocities(planet_distance)
-        create_planet(x, y, z, radius, texture_file, mass, rotational_speed, planets, planet_vx, 0, planet_vz)
+        create_planet(
+            x,
+            y,
+            z,
+            radius,
+            texture_file,
+            mass,
+            rotational_speed,
+            planets,
+            planet_vx,
+            0,
+            planet_vz,
+        )
         root.destroy()
 
     root = tk.Tk()
@@ -194,7 +257,9 @@ def open_tkinter_window(planets):
     mass_entry = tk.Entry(root)
     mass_entry.grid(row=4, column=1)
 
-    tk.Label(root, text="Rotational Speed:").grid(row=5, column=0)  # Add label for rotational speed
+    tk.Label(root, text="Rotational Speed:").grid(
+        row=5, column=0
+    )  # Add label for rotational speed
     rotational_speed_entry = tk.Entry(root)  # Add entry field for rotational speed
     rotational_speed_entry.grid(row=5, column=1)
 
@@ -203,7 +268,11 @@ def open_tkinter_window(planets):
     texture_entry.grid(row=6, column=1)
 
     def browse_texture_file():
-        filename = filedialog.askopenfilename(initialdir=os.getcwd(), title="Select Texture File", filetypes=[("JPEG files", "*.jpg"), ("PNG files", "*.png")])
+        filename = filedialog.askopenfilename(
+            initialdir=os.getcwd(),
+            title="Select Texture File",
+            filetypes=[("JPEG files", "*.jpg"), ("PNG files", "*.png")],
+        )
         if filename:
             texture_entry.delete(0, tk.END)
             texture_entry.insert(0, filename)
@@ -212,9 +281,12 @@ def open_tkinter_window(planets):
     browse_button.grid(row=6, column=2)
 
     create_button = tk.Button(root, text="Create", command=create_new_planet)
-    create_button.grid(row=7, columnspan=2)  # Adjust the row to avoid overlapping with the new entry field
+    create_button.grid(
+        row=7, columnspan=2
+    )  # Adjust the row to avoid overlapping with the new entry field
 
     root.mainloop()
+
 
 def main():
     intro_screen()
@@ -293,7 +365,7 @@ def main():
     glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_DISABLED)
     glfw.set_cursor_pos_callback(window, cursor_pos_callback)
 
-    sun = Planet(0, 0, 0, 100, "images/sun.jpg", 1.98892 * 10 ** 30, 0)
+    sun = Planet(0, 0, 0, 100, "images/sun.jpg", 1.98892 * 10**30, 0)
     sun.sun = True
 
     planets = [sun]
@@ -313,7 +385,9 @@ def main():
         distance_m = distance_au * Planet.AU
         x, y, z = distance_m, 0, 0
         vx, vz = calculate_initial_velocities(distance_m)
-        create_planet(x, y, z, radius, texture, mass, rotational_speed, planets, vx, 0, vz)
+        create_planet(
+            x, y, z, radius, texture, mass, rotational_speed, planets, vx, 0, vz
+        )
 
     while not glfw.window_should_close(window):
         for planet in planets:
@@ -321,7 +395,9 @@ def main():
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
-        gluLookAt(camera_pos[0], camera_pos[1], camera_pos[2], 0, 0, 0, 0, 1, 0)  # Set the camera position and orientation
+        gluLookAt(
+            camera_pos[0], camera_pos[1], camera_pos[2], 0, 0, 0, 0, 1, 0
+        )  # Set the camera position and orientation
 
         # Apply rotation to the camera
         glRotatef(camera_rot[0], 1, 0, 0)
@@ -338,6 +414,7 @@ def main():
             open_tkinter_window(planets)
 
     glfw.terminate()
+
 
 if __name__ == "__main__":
     main()
