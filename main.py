@@ -15,6 +15,8 @@ class Planet:
     G = 6.67428e-11  # Gravitational constant
     SCALE = 6000 / AU  # Scale for rendering
     TIMESTEP = 3000  # Time step
+    MAX_TIMESTEP = 200000  # Maximum time step
+    MIN_TIMESTEP = 100  # Minimum time step
 
     def __init__(
         self,
@@ -342,11 +344,11 @@ def main():
 
     # Function to increase the timestep
     def increase_timestep():
-        Planet.TIMESTEP *= 2
+        Planet.TIMESTEP = min(Planet.TIMESTEP * 2, Planet.MAX_TIMESTEP)
 
     # Function to decrease the timestep
     def decrease_timestep():
-        Planet.TIMESTEP /= 2
+        Planet.TIMESTEP = max(Planet.TIMESTEP / 2, Planet.MIN_TIMESTEP)
 
 
     # Function to handle mouse input for camera rotation
