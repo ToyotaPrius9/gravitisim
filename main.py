@@ -13,7 +13,7 @@ from intro_screen import intro_screen
 class Planet:
     AU = 149.6e6 * 1000  # Astronomical unit in meters
     G = 6.67428e-11  # Gravitational constant
-    SCALE = 4000 / AU  # Scale for rendering
+    SCALE = 6000 / AU  # Scale for rendering
     TIMESTEP = 3000  # Time step
 
     def __init__(
@@ -84,7 +84,7 @@ class Planet:
         glTranslatef(self.x * self.SCALE, self.y * self.SCALE, self.z * self.SCALE)
         glRotatef(
             self.rotation_angle, 0, 1, 0
-        )  # Rotate around Y-axis (change axis as needed)
+        )  # Rotate around Y-axis 
 
         quadric = gluNewQuadric()
         gluQuadricTexture(quadric, GL_TRUE)
@@ -107,7 +107,7 @@ class Planet:
         distance_x = other_x - self.x
         distance_y = other_y - self.y
         distance_z = other_z - self.z
-        distance = math.sqrt(distance_x**2 + distance_y**2 + distance_z**2)
+        distance = math.sqrt(distance_x**2 + distance_y**2 + distance_z**2) # Distance calculation formula
 
         if distance == 0:
             return 0, 0, 0
@@ -115,7 +115,7 @@ class Planet:
         if other.sun:
             self.distance_to_sun = distance
 
-        force = self.G * self.mass * other.mass / distance**2
+        force = self.G * self.mass * other.mass / distance**2 # Newton's law of universal gravitation 
         theta = math.atan2(distance_y, distance_x)
         phi = math.acos(distance_z / distance)
         force_x = math.sin(phi) * math.cos(theta) * force
@@ -129,7 +129,9 @@ class Planet:
             if self == other_planet:
                 continue
 
+            # Calculate force
             fx, fy, fz = self.attraction(other_planet)
+
             total_fx += fx
             total_fy += fy
             total_fz += fz
@@ -148,10 +150,14 @@ class Planet:
         total_fy += sun_force_y
         total_fz += sun_force_z
 
+        # Newtons second law, where total force components (fx, fy, fz) are divided by the mass to get acceleration.                 
+        # u = v + a * ∆t
         self.x_vel += total_fx / self.mass * self.TIMESTEP
         self.y_vel += total_fy / self.mass * self.TIMESTEP
         self.z_vel += total_fz / self.mass * self.TIMESTEP
 
+
+        # r = r + v * ∆t
         self.x += self.x_vel * self.TIMESTEP
         self.y += self.y_vel * self.TIMESTEP
         self.z += self.z_vel * self.TIMESTEP
@@ -355,20 +361,20 @@ def main():
     glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_DISABLED)
     glfw.set_cursor_pos_callback(window, cursor_pos_callback)
 
-    sun = Planet(0, 0, 0, 100, "images/sun.jpg", 1.98892 * 10**30, 0)
+    sun = Planet(0, 0, 0, 600, "images/sun.jpg", 1.98892 * 10**30, 0)
     sun.sun = True
 
     planets = [sun]
 
     planet_data = [
-        ("Mercury", 0.39, 12.4, "images/mercury.jpeg", 3.30e23, 0.1),
-        ("Venus", 0.72, 26.0, "images/venus.jpg", 4.87e24, 0.05),
-        ("Earth", 1.0, 26.4, "images/earth.jpg", 5.97e24, 0.02),
-        ("Mars", 1.52, 28.4, "images/mars.jpeg", 6.42e23, 0.03),
-        ("Jupiter", 5.2, 70.0, "images/jupiter.jpeg", 1.90e27, 0.01),
-        ("Saturn", 9.58, 62.0, "images/saturn.jpeg", 5.68e26, 0.005),
-        ("Uranus", 19.22, 25.0, "images/uranus.jpeg", 8.68e25, 0.008),
-        ("Neptune", 30.05, 24.0, "images/neptune.jpeg", 1.02e26, 0.007),
+        ("Mercury", 0.39, 72.4, "images/mercury.jpeg", 3.30e23, 0.1),
+        ("Venus", 0.72, 156.0, "images/venus.jpg", 4.87e24, 0.05),
+        ("Earth", 1.0, 156.9, "images/earth.jpg", 5.97e24, 0.02),
+        ("Mars", 1.52, 168.8, "images/mars.jpeg", 6.42e23, 0.03),
+        ("Jupiter", 5.2, 420.0, "images/jupiter.jpeg", 1.90e27, 0.01),
+        ("Saturn", 9.58, 372.2, "images/saturn.jpeg", 5.68e26, 0.005),
+        ("Uranus", 19.22, 150.0, "images/uranus.jpeg", 8.68e25, 0.008),
+        ("Neptune", 30.05, 144.0, "images/neptune.jpeg", 1.02e26, 0.007),
     ]
 
     for name, distance_au, radius, texture, mass, rotational_speed in planet_data:
